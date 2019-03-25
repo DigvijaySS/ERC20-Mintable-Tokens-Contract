@@ -1,16 +1,8 @@
 pragma solidity ^0.4.18;
 
 // ----------------------------------------------------------------------------
-// Real Estate ICO CROWDSALE token contract
-//
-// Deployed to : <Contract address>
-// Symbol      : <Symbol>
-// Name        : <Name>
-// Total supply: Gazillion
-// Decimals    : 18
-//
+// 'webico' CROWDSALE token contract
 // ----------------------------------------------------------------------------
-
 
 // ----------------------------------------------------------------------------
 // Safe maths
@@ -112,11 +104,11 @@ contract webico is ERC20Interface, Owned, SafeMath {
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
-    function webico(string tokenSymbol, string tokenName, uint numberOfTokens, address creditor) public {
+    function webico(string tokenSymbol, string tokenName, uint tokens) public {
         symbol = tokenSymbol;
         name = tokenName;
-        _totalSupply = numberOfTokens;
-        balances[creditor] = safeAdd(balances[creditor], numberOfTokens);
+        _totalSupply = tokens;
+        balances[msg.sender] = safeAdd(balances[msg.sender], tokens);
         decimals = 18;
         bonusEnds = now + 1 weeks;
         endDate = now + 7 weeks;
@@ -151,6 +143,19 @@ contract webico is ERC20Interface, Owned, SafeMath {
         return true;
     }
 
+    // ------------------------------------------------------------------------
+    // Transact the balance 'from' account to `to` account
+    // - From account must have sufficient balance to transfer
+    // - 0 value transfers are not allowed allowed
+    // ------------------------------------------------------------------------
+    function transact(address from, address to, uint tokens) public returns (bool success) {
+        require(tokens > 0);
+        require(balances[from] >= tokens);
+        balances[from] = safeSub(balances[from], tokens);
+        balances[to] = safeAdd(balances[to], tokens);
+        Transfer(from, to, tokens);
+        return true;
+    }
 
     // ------------------------------------------------------------------------
     // Token owner can approve for `spender` to transferFrom(...) `tokens`
@@ -224,14 +229,25 @@ contract webico is ERC20Interface, Owned, SafeMath {
     }
 
     // ------------------------------------------------------------------------
-    // Increase token supply
+    // INCREASE token supply
     // ------------------------------------------------------------------------
     function increaseSupply(uint value, address to) public returns (bool) {
-        require(now >= startDate && now <= endDate);
-        value = safeMul(decimals, value);
+        require(value > 0);
         _totalSupply = safeAdd(_totalSupply, value);
         balances[to] = safeAdd(balances[to], value);
         Transfer(0, to, value);
+        return true;
+    }
+
+    // ------------------------------------------------------------------------
+    // DECREASE token supply
+    // ------------------------------------------------------------------------
+    function decreaseSupply(uint value, address from) public returns (bool) {
+        require(value > 0);
+        require(balances[from] >= value);
+        balances[from] = safeSub(balances[from], value);
+        _totalSupply = safeSub(_totalSupply, value);
+        Transfer(from, 0, value);
         return true;
     }
 
