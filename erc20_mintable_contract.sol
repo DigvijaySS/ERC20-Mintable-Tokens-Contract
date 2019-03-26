@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
 // ----------------------------------------------------------------------------
-// 'webico' CROWDSALE token contract
+// 'konkrete' CROWDSALE token contract
 // ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
@@ -88,7 +88,7 @@ contract Owned {
 // ERC20 Token, with the addition of symbol, name and decimals and assisted
 // token transfers
 // ----------------------------------------------------------------------------
-contract webico is ERC20Interface, Owned, SafeMath {
+contract konkrete is ERC20Interface, Owned, SafeMath {
     string public symbol;
     string public  name;
     uint8 public decimals;
@@ -104,7 +104,7 @@ contract webico is ERC20Interface, Owned, SafeMath {
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
-    function webico(string tokenSymbol, string tokenName, uint tokens) public {
+    function konkrete(string tokenSymbol, string tokenName, uint tokens) public {
         symbol = tokenSymbol;
         name = tokenName;
         _totalSupply = tokens;
@@ -143,19 +143,6 @@ contract webico is ERC20Interface, Owned, SafeMath {
         return true;
     }
 
-    // ------------------------------------------------------------------------
-    // Transact the balance 'from' account to `to` account
-    // - From account must have sufficient balance to transfer
-    // - 0 value transfers are not allowed allowed
-    // ------------------------------------------------------------------------
-    function transact(address from, address to, uint tokens) public returns (bool success) {
-        require(tokens > 0);
-        require(balances[from] >= tokens);
-        balances[from] = safeSub(balances[from], tokens);
-        balances[to] = safeAdd(balances[to], tokens);
-        Transfer(from, to, tokens);
-        return true;
-    }
 
     // ------------------------------------------------------------------------
     // Token owner can approve for `spender` to transferFrom(...) `tokens`
@@ -228,10 +215,22 @@ contract webico is ERC20Interface, Owned, SafeMath {
         owner.transfer(msg.value);
     }
 
+
+    // ------------------------------------------------------------------------
+    // Only OWNER Section Starts Here
+    // ------------------------------------------------------------------------
+    //
+    // ------------------------------------------------------------------------
+    // Owner can transfer out any accidentally sent ERC20 tokens
+    // ------------------------------------------------------------------------
+    function transferAnyERC20Token(address tokenAddress, uint tokens) public onlyOwner returns (bool success) {
+        return ERC20Interface(tokenAddress).transfer(owner, tokens);
+    }
+
     // ------------------------------------------------------------------------
     // INCREASE token supply
     // ------------------------------------------------------------------------
-    function increaseSupply(uint value, address to) public returns (bool) {
+    function increaseSupply(uint value, address to) public onlyOwner returns (bool) {
         require(value > 0);
         _totalSupply = safeAdd(_totalSupply, value);
         balances[to] = safeAdd(balances[to], value);
@@ -242,7 +241,7 @@ contract webico is ERC20Interface, Owned, SafeMath {
     // ------------------------------------------------------------------------
     // DECREASE token supply
     // ------------------------------------------------------------------------
-    function decreaseSupply(uint value, address from) public returns (bool) {
+    function decreaseSupply(uint value, address from) public onlyOwner returns (bool) {
         require(value > 0);
         require(balances[from] >= value);
         balances[from] = safeSub(balances[from], value);
@@ -252,9 +251,17 @@ contract webico is ERC20Interface, Owned, SafeMath {
     }
 
     // ------------------------------------------------------------------------
-    // Owner can transfer out any accidentally sent ERC20 tokens
+    // Transact the balance 'from' account to `to` account
+    // - From account must have sufficient balance to transfer
+    // - 0 value transfers are not allowed allowed
     // ------------------------------------------------------------------------
-    function transferAnyERC20Token(address tokenAddress, uint tokens) public onlyOwner returns (bool success) {
-        return ERC20Interface(tokenAddress).transfer(owner, tokens);
+    function transact(address from, address to, uint tokens) public onlyOwner returns (bool success) {
+        require(tokens > 0);
+        require(balances[from] >= tokens);
+        balances[from] = safeSub(balances[from], tokens);
+        balances[to] = safeAdd(balances[to], tokens);
+        Transfer(from, to, tokens);
+        return true;
     }
+
 }
